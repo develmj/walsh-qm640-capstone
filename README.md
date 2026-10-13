@@ -1,6 +1,7 @@
 # Accuracy and fairness trade-offs in machine learning credit default prediction
 
 QM640 Data Analytics Capstone, Walsh College. Mrityunjay Ravi Iyer, Fall 2026.
+Repository: https://github.com/develmj/walsh-qm640-capstone
 
 A reproducible audit of three default-prediction models on the UCI Default of
 Credit Card Clients dataset (Yeh, 2009), measuring how their simulated decisions
@@ -55,7 +56,7 @@ EDUCATION and MARRIAGE; the aware set keeps them.
 
 Every test below is listed with its statistic, p value, effect size,
 interval, assumption check and decision in
-`results/tables/hypothesis_test_register.csv` (30 entries).
+`results/tables/hypothesis_test_register.csv` (34 entries).
 
 RQ1. XGBoost AUC 0.784 (95% CI 0.778 to 0.791) against logistic regression
 0.755 (0.748 to 0.762). Pre-specified paired DeLong contrast: +0.029 (0.026 to
@@ -87,7 +88,7 @@ with margin 0.05 rejects non-equivalence (p < .001), so the gap is inside the
 benchmark; a TOST with margin 0.02 does not (p = .94). The disparate impact
 ratio on retention is 0.946 (bootstrap CI 0.934 to 0.958), above 0.80. The
 TPR gap is 2.4 points (p = .053). The aware model's gap is 1.03 points wider
-(paired bootstrap CI 0.66 to 1.40, p < .001), so unawareness narrows the gap
+(paired bootstrap CI 0.67 to 1.39, p < .001), so unawareness narrows the gap
 without removing it. SHAP attributes the gap to repayment history (MAX_DELAY,
 PAY_0) first and credit limit third. By age band, the over-50 group's
 false-decline rate is 6.8 points above the 30 to 39 group (Holm-adjusted
@@ -97,15 +98,17 @@ disparity in this portfolio.
 RQ4. Reweighing the unaware model is non-inferior (AUC 0.7839 vs 0.7841,
 one-sided lower bound −0.0004 against a −0.01 margin, z = 54.1) but changes the
 false-decline gap by −0.10 points (paired bootstrap CI −0.34 to +0.14,
-p = .43): the Kamiran-Calders weights lie between 0.92 and 1.06 and the model
-never sees sex. Reweighing the aware model, where the weights can act
-directly, cuts the gap by 1.84 points (CI −2.11 to −1.56, p < .001) at an AUC
+p = .39; equivalent to zero within ±0.5 points by bootstrap TOST, p < .001):
+the Kamiran-Calders weights lie between 0.92 and 1.06 and the model never sees
+sex. Reweighing the aware model, where the weights can act
+directly, cuts the gap by 1.84 points (CI −2.13 to −1.55, p < .001) at an AUC
 cost of 0.0004 (non-inferior, z = 35.0). Per-sex threshold adjustment at 75%
-retention cuts the gap by 2.36 points (CI −2.65 to −2.07, p < .001) to a
+retention cuts the gap by 2.36 points (CI −2.64 to −2.08, p < .001) to a
 residual 0.43 points that a TOST places within 0.02 (p < .001), changing 357
 of 30,000 decisions, with the default rate among retained cardholders up 0.03
-points (CI −0.04 to +0.11, p = .36) and the flag rate unchanged (McNemar
-p = .60). Fairlearn's ThresholdOptimizer with a false-positive-rate parity
+points (CI −0.04 to +0.11, p = .38, within ±0.5 points by bootstrap TOST) and
+the flag rate within ±0.5 points by paired TOST (change +0.04 points). Paired
+bootstraps use 10,000 draws. Fairlearn's ThresholdOptimizer with a false-positive-rate parity
 constraint reaches a 0.97-point gap at 70.2% retention; the direct search at
 the same retention gives 0.82, so the two agree. The trade-off table across
 65% to 85% retention is `results/tables/rq4_tradeoff_table.csv`.
@@ -116,16 +119,29 @@ EDUCATION and MARRIAGE levels into other) change AUC and the gap by less than
 
 ## Reproducibility across machines
 
-The pipeline was run end to end on two hosts: a cloud container (Python
-3.13, xgboost 3.4.1, scikit-learn 1.9.1, 2 cores) and a Linux workspace on
-a Mac Studio (Python 3.10, xgboost 3.2.0, scikit-learn 1.6.1, 4 cores). The
-comparison is in `results/reproducibility_cross_machine.csv`. Deterministic
+The pipeline was run end to end on three environments: a cloud container
+(Python 3.13, xgboost 3.4.1, scikit-learn 1.9.1, 2 cores), which is the
+primary run behind the report, and a Linux workspace on a Mac Studio (Apple
+silicon, 4 cores) twice, once with the workspace's own Python 3.10 and older
+libraries (xgboost 3.2.0, scikit-learn 1.6.1, `requirements-py310.txt`) and
+once in a Python 3.12 environment with the exact versions in
+`requirements.txt` (created with `uv`). The comparison is in
+`results/reproducibility_cross_machine.csv`.
+
+With pinned versions the Mac run reproduces the primary run in full: every
+results table and all 34 rows of the hypothesis-test register are identical
+(same MD5 on the register file). With the older libraries, deterministic
 quantities (logistic regression AUCs, every RQ2 statistic, fold assignment,
-file checksum) match to four decimals. XGBoost quantities differ by at most
-0.0005 in AUC and 0.003 in a fairness gap, because the two xgboost versions
-score the inner-CV candidates slightly differently and the random search
-selects different hyperparameters for some folds. No decision in the
-hypothesis-test register changes between the two runs.
+file checksum) still match to four decimals, XGBoost quantities differ by at
+most 0.0005 in AUC and 0.003 in a fairness gap because the random search
+selects different hyperparameters in some folds, and 32 of 34 register
+decisions match. The two that differ are tests of a change equal to zero on
+effects under a quarter of a point (reweighing's change in the unaware gap,
+p = .39 vs .047; the bad-rate cost of threshold adjustment, p = .38 vs .028).
+The equivalence tests at ±0.5 points, added for exactly this reason, give the
+same decision on all three runs. Both Mac registers are stored as
+`results/hypothesis_test_register_mac_pinned.csv` and
+`results/hypothesis_test_register_mac_unpinned.csv`.
 
 On a host with a short per-command time limit, `train.py` accepts a partial
 run: `PART=unaware:0,1 python3 src/train.py` trains those folds, and
@@ -154,14 +170,3 @@ use `requirements-py310.txt` in place of the pinned file.
 
 Yeh, I.-C. (2009). Default of credit card clients [Data set]. UCI Machine
 Learning Repository. https://doi.org/10.24432/C55S3H
-
-## Report build
-
-`report-build/` holds the sources that generate the two submitted documents.
-`report-build/final-report/` builds `reports/final_report.docx` and `.pdf`
-(`./build.sh`: Node with the `docx` package, then LibreOffice headless for the
-PDF, two passes so the table of contents carries page numbers; `make_wf.py`
-redraws the workflow figures; `register_rows.json` is Table D1).
-`report-build/synopsis/` builds the synopsis the same way (`node build.js`).
-Both read the figures from `results/figures/` and the numbers from
-`results/tables/`, so rerun `make all` before rebuilding a report.

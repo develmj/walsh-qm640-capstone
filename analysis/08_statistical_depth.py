@@ -23,6 +23,8 @@ from evaluate import audit
 from policy import apply_cutoff, apply_group_thresholds, cutoff_for_retention, group_thresholds
 
 ALPHA = 0.05
+N_BOOT_PAIRED = 10 * N_BOOT      # paired before/after comparisons use 10,000 draws
+EQUIV_MARGIN = 0.005            # 0.5 percentage points: a tenth of the +/-0.05 fairness benchmark
 z975, z80 = norm.ppf(0.975), norm.ppf(0.80)
 df = load_clean(); dfi = df.set_index("ID")
 scores = pd.read_parquet(PROCESSED / "scores.parquet")
@@ -249,11 +251,11 @@ d2, z2, p2_, lo2, hi2, _, mde2 = two_prop_test(xm2, nm2, xf2, nf2)
 add("RQ3", "Secondary: TPR_male = TPR_female among defaulters", "Two-proportion z test, Newcombe CI", round(z2, 3), "z", None, p2_, round(d2, 4), "TPR difference",
     round(lo2, 4), round(hi2, 4), "Reject" if p2_ < ALPHA else "Retain", f"Defaulters only (n = {nm2:,} male, {nf2:,} female)", round(mde2, 4), "lender-risk measure")
 # Paired comparison: does unawareness change the gap? aware vs unaware on the same individuals
-pb = paired_boot_gaps(y, sex, {"unaware": flag_u, "aware": flag_a})
+pb = paired_boot_gaps(y, sex, {"unaware": flag_u, "aware": flag_a}, n_boot=N_BOOT_PAIRED)
 dgap = pb["aware"]["FDR_gap"] - pb["unaware"]["FDR_gap"]
 gap_u, gap_a = audit(y, sex, flag_u)["FDR_gap"], audit(y, sex, flag_a)["FDR_gap"]
 p_paired = 2 * min((dgap <= 0).mean(), (dgap >= 0).mean())
-add("RQ3", "Unawareness effect: FDR gap (aware) - FDR gap (unaware) = 0", "Paired stratified bootstrap (1,000), percentile interval", round(gap_a - gap_u, 4),
+add("RQ3", "Unawareness effect: FDR gap (aware) - FDR gap (unaware) = 0", "Paired stratified bootstrap (10,000), percentile interval", round(gap_a - gap_u, 4),
     "difference of gaps", None, p_paired, round(gap_a - gap_u, 4), "change in false-decline gap", round(np.quantile(dgap, 0.025), 4), round(np.quantile(dgap, 0.975), 4),
     "Reject" if p_paired < ALPHA else "Retain", "Same individuals under both models; resampling within sex x outcome strata", None,
     "positive value means the aware model has the larger gap")
@@ -315,7 +317,7 @@ for k in range(5):
     flag_ta[fm] = apply_group_thresholds(test_b["p_raw"].values[fm], sex[fm], thr)
 rw_a = pd.read_parquet(PROCESSED / "scores_reweighed_aware.parquet")
 flag_rw_a = flags_single(rw_a, RETENTION_PRIMARY, idx)
-pb4 = paired_boot_gaps(y, sex, {"unmitigated": flag_u, "reweighed": flag_rw, "threshold": flag_ta, "aware": flag_a, "aware_reweighed": flag_rw_a})
+pb4 = paired_boot_gaps(y, sex, {"unmitigated": flag_u, "reweighed": flag_rw, "threshold": flag_ta, "aware": flag_a, "aware_reweighed": flag_rw_a}, n_boot=N_BOOT_PAIRED)
 paired_rows = []
 for name, lab in (("reweighed", "Reweighing (unaware) vs unmitigated"), ("threshold", "Threshold adjustment vs unmitigated"), ("aware_reweighed", "Reweighing (aware) vs aware unmitigated")):
     ref = "aware" if name == "aware_reweighed" else "unmitigated"
@@ -329,14 +331,40 @@ for name, lab in (("reweighed", "Reweighing (unaware) vs unmitigated"), ("thresh
                         "bad_ci95_low": np.quantile(dbad, 0.025), "bad_ci95_high": np.quantile(dbad, 0.975), "bad_p_bootstrap": pbad,
                         "change_in_DI": g_obs["DI_ratio"] - g_ref["DI_ratio"], "DI_ci95_low": np.quantile(ddi, 0.025), "DI_ci95_high": np.quantile(ddi, 0.975),
                         "decisions_changed": int((({"reweighed": flag_rw, "threshold": flag_ta, "aware_reweighed": flag_rw_a}[name]) != (flag_a if ref == "aware" else flag_u)).sum())})
-    add("RQ4", f"{lab}: change in FDR gap = 0", "Paired stratified bootstrap (1,000)", round(g_obs["FDR_gap"] - g_ref["FDR_gap"], 4), "difference", None, pg,
+    add("RQ4", f"{lab}: change in FDR gap = 0", "Paired stratified bootstrap (10,000)", round(g_obs["FDR_gap"] - g_ref["FDR_gap"], 4), "difference", None, pg,
         round(g_obs["FDR_gap"] - g_ref["FDR_gap"], 4), "change in false-decline gap", round(np.quantile(dg, 0.025), 4), round(np.quantile(dg, 0.975), 4),
         "Reject" if pg < ALPHA else "Retain", "Same individuals under both policies; strata sex x outcome", None, "")
-    add("RQ4", f"{lab}: change in default rate among retained = 0", "Paired stratified bootstrap (1,000)",
+    add("RQ4", f"{lab}: change in default rate among retained = 0", "Paired stratified bootstrap (10,000)",
         round(g_obs["overall_default_rate_retained"] - g_ref["overall_default_rate_retained"], 5), "difference", None, pbad,
         round(g_obs["overall_default_rate_retained"] - g_ref["overall_default_rate_retained"], 5), "change in default rate among retained",
         round(np.quantile(dbad, 0.025), 5), round(np.quantile(dbad, 0.975), 5), "Reject" if pbad < ALPHA else "Retain", "As above", None, "decision-quality cost")
 pd.DataFrame(paired_rows).to_csv(TABLES / "rq4_paired_bootstrap_changes.csv", index=False, float_format="%.5f")
+
+# Equivalence tests on the near-zero changes. A failure to reject "change = 0" is weak
+# evidence of no change, so each change that the report reads as immaterial is also
+# tested for equivalence within +/- EQUIV_MARGIN by the bootstrap form of the two
+# one-sided tests: reject non-equivalence when both one-sided bootstrap p values are
+# below alpha, which is the same as the 90% percentile interval lying inside the band.
+def boot_tost(d, margin):
+    p_a = (d <= -margin).mean()   # H0a: change <= -margin
+    p_b = (d >= margin).mean()    # H0b: change >= +margin
+    return max(p_a, p_b), np.quantile(d, 0.05), np.quantile(d, 0.95)
+
+eq_cases = [("reweighed", "Reweighing (unaware) vs unmitigated", "FDR_gap", "change in false-decline gap", "change in FDR gap"),
+            ("reweighed", "Reweighing (unaware) vs unmitigated", "bad", "change in default rate among retained", "change in default rate among retained"),
+            ("threshold", "Threshold adjustment vs unmitigated", "bad", "change in default rate among retained", "change in default rate among retained"),
+            ("aware_reweighed", "Reweighing (aware) vs aware unmitigated", "bad", "change in default rate among retained", "change in default rate among retained")]
+for name, lab, key, eff_name, short in eq_cases:
+    ref = "aware" if name == "aware_reweighed" else "unmitigated"
+    d = pb4[name][key] - pb4[ref][key]
+    obs = {"FDR_gap": lambda n_, r_: audit(y, sex, {"reweighed": flag_rw, "threshold": flag_ta, "aware_reweighed": flag_rw_a}[n_])["FDR_gap"] - audit(y, sex, flag_a if r_ == "aware" else flag_u)["FDR_gap"],
+           "bad": lambda n_, r_: audit(y, sex, {"reweighed": flag_rw, "threshold": flag_ta, "aware_reweighed": flag_rw_a}[n_])["overall_default_rate_retained"] - audit(y, sex, flag_a if r_ == "aware" else flag_u)["overall_default_rate_retained"]}[key](name, ref)
+    p_eq, q05, q95 = boot_tost(d, EQUIV_MARGIN)
+    add("RQ4", f"{lab}: {short} within +/-0.005 (TOST, margin 0.5 pts)", "Bootstrap two one-sided tests (10,000 draws)",
+        round(max(q05, q95, key=abs), 5), "90% interval bound", None, p_eq, round(obs, 5), eff_name, round(q05, 5), round(q95, 5),
+        "Reject non-equivalence (change within 0.5 pts)" if p_eq < ALPHA else "Retain (change not shown within 0.5 pts)",
+        "Same individuals under both policies; margin set at a tenth of the fairness benchmark after the cross-version check", None,
+        "90% percentile interval reported as the CI; equivalence holds when it lies inside +/-0.005")
 # TOST for the threshold-adjusted gap: equivalent to zero within 0.02?
 nd = y == 0
 xm3, xf3 = int(flag_ta[nd & (sex == 1)].sum()), int(flag_ta[nd & (sex == 2)].sum())
@@ -345,12 +373,21 @@ p_t3, _, _ = tost(d3, se3, 0.02)
 add("RQ4", "Threshold adjustment: residual |FDR gap| < 0.02 (TOST, margin 0.02)", "Two one-sided z tests", round((d3 - 0.02) / se3, 3), "z (upper)", None, p_t3,
     round(d3, 4), "false-decline rate difference", round(lo3, 4), round(hi3, 4), "Reject non-equivalence (gap within 0.02)" if p_t3 < ALPHA else "Retain",
     "Unpooled SE", None, f"two-sided test of zero gap p = {p3:.3g}")
-# McNemar on decision flips (unmitigated vs threshold adjustment)
+# Flag-rate change under threshold adjustment: the design holds overall retention at the
+# target, so the claim is "no material change", tested as equivalence within +/-0.5 points
+# on the paired difference of proportions (Wald SE for paired binary outcomes). McNemar's
+# test of exact marginal homogeneity is reported in the note for completeness.
 b01 = int(((flag_u == 0) & (flag_ta == 1)).sum()); b10 = int(((flag_u == 1) & (flag_ta == 0)).sum())
+n_all = len(flag_u)
+d_flag = (b01 - b10) / n_all
+se_flag = np.sqrt((b01 + b10) - (b01 - b10) ** 2 / n_all) / n_all
+p_flag_eq, _, _ = tost(d_flag, se_flag, EQUIV_MARGIN)
 mc = (abs(b01 - b10) - 1) ** 2 / (b01 + b10); p_mc = chi2.sf(mc, 1)
-add("RQ4", "Threshold adjustment changes the overall flag rate (marginal homogeneity)", "McNemar chi-square with continuity correction", round(mc, 2), "chi2", 1, p_mc,
-    b01 + b10, "decisions changed (count)", b01, b10, "Retain (flag rate unchanged)" if p_mc > ALPHA else "Reject", "Paired binary decisions on the same individuals",
-    None, "b01 = newly flagged, b10 = newly retained; retention held at 75% by design")
+add("RQ4", "Threshold adjustment: change in overall flag rate within +/-0.005 (TOST, margin 0.5 pts)", "Two one-sided z tests on paired proportions",
+    round((d_flag - EQUIV_MARGIN) / se_flag, 3), "z (upper)", None, p_flag_eq, round(d_flag, 5), "change in flag rate",
+    round(d_flag - 1.96 * se_flag, 5), round(d_flag + 1.96 * se_flag, 5),
+    "Reject non-equivalence (flag rate within 0.5 pts)" if p_flag_eq < ALPHA else "Retain", "Paired binary decisions on the same individuals; Wald SE", None,
+    f"{b01 + b10} decisions changed (b01 = {b01} newly flagged, b10 = {b10} newly retained); McNemar chi2 = {mc:.2f}, p = {p_mc:.3g}; retention held at 75% by design")
 
 reg = pd.DataFrame(register)
 reg.to_csv(TABLES / "hypothesis_test_register.csv", index=False)
