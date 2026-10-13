@@ -1,0 +1,7 @@
+feature_set,model,0,1,2,3,4
+aware,Logistic regression,0.7552,0.759,0.7684,0.7509,0.7491
+aware,Random forest,0.7858,0.7871,0.7923,0.774,0.782
+aware,XGBoost,0.7881,0.791,0.7928,0.7755,0.7802
+unaware,Logistic regression,0.7519,0.7572,0.7675,0.7475,0.7495
+unaware,Random forest,0.785,0.7856,0.7934,0.773,0.7813
+unaware,XGBoost,0.786,0.7894,0.7908,0.7738,0.7804

@@ -1,0 +1,2 @@
+comparison,n_male,n_female,rate_male,rate_female,difference,ci95_low,ci95_high,z,p_value,cohens_h
+male vs female default rate,11888,18112,0.2417,0.2078,0.0339,0.0242,0.0436,6.921,4.47e-12,0.081

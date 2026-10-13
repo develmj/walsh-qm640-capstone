@@ -1,0 +1,7 @@
+feature_set,model,n,AUC,AUC_se,AUC_ci95_low,AUC_ci95_high,KS,Brier_raw,Brier_calibrated,F1_at_cutoff,retain_rate_at_cutoff
+unaware,Logistic regression,30000,0.7547,0.0035,0.7478,0.7616,0.3988,0.1959,0.1428,0.5158,0.7503
+unaware,Random forest,30000,0.7837,0.0033,0.7772,0.7901,0.4300,0.1658,0.1347,0.5445,0.7474
+unaware,XGBoost,30000,0.7841,0.0033,0.7776,0.7905,0.4278,0.1794,0.1346,0.5441,0.7479
+aware,Logistic regression,30000,0.7565,0.0035,0.7496,0.7633,0.3982,0.1954,0.1427,0.5172,0.7490
+aware,Random forest,30000,0.7843,0.0033,0.7778,0.7907,0.4290,0.1649,0.1344,0.5462,0.7477
+aware,XGBoost,30000,0.7856,0.0033,0.7791,0.7920,0.4278,0.1786,0.1341,0.5439,0.7469

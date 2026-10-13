@@ -1,0 +1,4 @@
+contrast,difference,se,z,p_two_sided,p_holm,reject_holm
+XGBoost vs logistic,0.0293673,0.00187539,15.6593,2.87168e-55,8.61503e-55,True
+Random forest vs logistic,0.0289585,0.00201397,14.3788,7.03459e-47,1.40692e-46,True
+XGBoost vs random forest,0.000408805,0.000817803,0.499882,0.617158,0.617158,False

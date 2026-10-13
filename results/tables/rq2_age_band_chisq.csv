@@ -1,0 +1,2 @@
+test,chi2,df,p_value,cramers_v,min_expected
+"chi-square independence, DEFAULT x AGE_BAND",44.11,3,1.43e-09,0.0383,592.8

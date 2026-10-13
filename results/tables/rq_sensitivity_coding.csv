@@ -1,0 +1,5 @@
+run,AUC,AUC_ci95_low,AUC_ci95_high,DI_ratio,FDR_gap,FDR_gap_ci95_low,FDR_gap_ci95_high,TPR_gap,default_rate_retained
+Primary: unaware XGBoost,0.7841,0.7776,0.7905,0.9460,0.0279,0.0182,0.0376,0.0237,0.1236
+Sensitivity A: PAY codes -2 and 0 collapsed (unaware XGBoost),0.7841,0.7777,0.7905,0.9451,0.0272,0.0177,0.0371,0.0293,0.1242
+Primary: aware XGBoost,0.7856,0.7791,0.7920,0.9310,0.0382,0.0283,0.0484,0.0405,0.1235
+Sensitivity B: undocumented EDUCATION and MARRIAGE merged into other (aware XGBoost),0.7860,0.7796,0.7924,0.9293,0.0391,0.0297,0.0491,0.0426,0.1230

@@ -1,0 +1,190 @@
+python3 src/download.py
+sha256 c76095b2a65c6e1b0ef6bdfab785346065b02f3f50cab6751d5a46b4c01c9e44
+structure verified: 30,000 x 25, 6,636 defaults, 11,888 male / 18,112 female
+python3 src/prepare.py
+(30000, 29) {0: 6000, 1: 6000, 2: 6000, 3: 6000, 4: 6000}
+fold 0: {'fit': 19200, 'test': 6000, 'cal': 4800}
+fold 1: {'fit': 19200, 'test': 6000, 'cal': 4800}
+fold 2: {'fit': 19200, 'test': 6000, 'cal': 4800}
+fold 3: {'fit': 19200, 'test': 6000, 'cal': 4800}
+fold 4: {'fit': 19200, 'test': 6000, 'cal': 4800}
+EDUCATION levels: {0: 345, 1: 10585, 2: 14030, 3: 4917, 4: 123}
+MARRIAGE levels: {0: 54, 1: 13659, 2: 15964, 3: 323}
+AGE_BAND: {'30-39': 11238, '<30': 9618, '40-49': 6464, '>=50': 2680}
+python3 analysis/01_eda.py
+                 mean       50%      min        max   skew
+LIMIT_BAL  167484.323  140000.0  10000.0  1000000.0  0.993
+AGE            35.486      34.0     21.0       79.0  0.732
+PAY_0          -0.017       0.0     -2.0        8.0  0.732
+PAY_2          -0.134       0.0     -2.0        8.0  0.791
+PAY_3          -0.166       0.0     -2.0        8.0  0.841
+PAY_4          -0.221       0.0     -2.0        8.0  1.000
+PAY_5          -0.266       0.0     -2.0        8.0  1.008
+PAY_6          -0.291       0.0     -2.0        8.0  0.948
+   variable  level      n  default_rate
+0       SEX    1.0  11888        0.2417
+1       SEX    2.0  18112        0.2078
+2  AGE_BAND  30-39  11238        0.2025
+3  AGE_BAND  40-49   6464        0.2297
+4  AGE_BAND    <30   9618        0.2284
+5  AGE_BAND   >=50   2680        0.2530
+median limit by sex: {1: 130000.0, 2: 150000.0}
+spearman with DEFAULT: {'LIMIT_BAL': -0.17, 'PAY_AMT1': -0.16, 'PAY_RATIO': -0.13, 'BILL_AMT1': -0.025, 'AGE': 0.005, 'UTILISATION': 0.073, 'PAY_6': 0.143, 'PAY_5': 0.159, 'PAY_4': 0.174, 'PAY_3': 0.195, 'PAY_2': 0.217, 'PAY_0': 0.292, 'MAX_DELAY': 0.321}
+python3 analysis/02_rq2_outcome_disparity.py
+                                       0
+comparison   male vs female default rate
+n_male                             11888
+n_female                           18112
+rate_male                         0.2417
+rate_female                       0.2078
+difference                        0.0339
+ci95_low                          0.0242
+ci95_high                         0.0436
+z                                  6.921
+p_value                              0.0
+cohens_h                           0.081
+  age_band      n  defaults  default_rate  ci95_low  ci95_high
+0      <30   9618      2197        0.2284    0.2200     0.2368
+1    30-39  11238      2276        0.2025    0.1951     0.2100
+2    40-49   6464      1485        0.2297    0.2195     0.2400
+3     >=50   2680       678        0.2530    0.2365     0.2694
+chi2=44.1 df=3 p=1.43e-09 V=0.0383
+                term    coef  ...  or_ci95_high        p_value
+0  male (unadjusted)  0.1949  ...        1.2842   4.650000e-12
+1               male  0.1122  ...        1.1839   1.030000e-04
+2                age  0.0089  ...        1.0119   3.260000e-09
+3          log_limit -0.4388  ...        0.6638  1.100000e-192
+
+[4 rows x 6 columns]
+adjusted marginal difference: 0.0188
+XGB_ITER=12 python3 src/train.py
+[unaware] fold 0 done in 29s
+[unaware] fold 1 done in 37s
+[unaware] fold 2 done in 30s
+[unaware] fold 3 done in 31s
+[unaware] fold 4 done in 35s
+[aware] fold 0 done in 31s
+[aware] fold 1 done in 39s
+[aware] fold 2 done in 34s
+[aware] fold 3 done in 32s
+[aware] fold 4 done in 39s
+feature_set  model  partition
+aware        lr     cal          24000
+                    test         30000
+             rf     cal          24000
+                    test         30000
+             xgb    cal          24000
+                    test         30000
+unaware      lr     cal          24000
+                    test         30000
+             rf     cal          24000
+                    test         30000
+             xgb    cal          24000
+                    test         30000
+dtype: int64
+python3 analysis/03_rq1_models.py
+feature_set               model     n    AUC  AUC_se  AUC_ci95_low  AUC_ci95_high     KS  Brier_raw  Brier_calibrated  F1_at_cutoff  retain_rate_at_cutoff
+    unaware Logistic regression 30000 0.7547  0.0035        0.7478         0.7616 0.3988     0.1959            0.1428        0.5158                 0.7503
+    unaware       Random forest 30000 0.7837  0.0033        0.7772         0.7901 0.4300     0.1658            0.1347        0.5445                 0.7474
+    unaware             XGBoost 30000 0.7841  0.0033        0.7776         0.7905 0.4278     0.1794            0.1346        0.5441                 0.7479
+      aware Logistic regression 30000 0.7565  0.0035        0.7496         0.7633 0.3982     0.1954            0.1427        0.5172                 0.7490
+      aware       Random forest 30000 0.7843  0.0033        0.7778         0.7907 0.4290     0.1649            0.1344        0.5462                 0.7477
+      aware             XGBoost 30000 0.7856  0.0033        0.7791         0.7920 0.4278     0.1786            0.1341        0.5439                 0.7469
+feature_set                              contrast  AUC_a  AUC_b  difference  ci95_low  ci95_high       z  p_two_sided
+    unaware   XGBoost vs logistic (pre-specified) 0.7841 0.7547      0.0294    0.0257     0.0330 15.6593       0.0000
+    unaware Random forest vs logistic (secondary) 0.7837 0.7547      0.0290    0.0250     0.0329 14.3788       0.0000
+    unaware  XGBoost vs random forest (secondary) 0.7841 0.7837      0.0004   -0.0012     0.0020  0.4999       0.6172
+      aware   XGBoost vs logistic (pre-specified) 0.7856 0.7565      0.0291    0.0254     0.0328 15.4465       0.0000
+      aware Random forest vs logistic (secondary) 0.7843 0.7565      0.0278    0.0238     0.0319 13.5658       0.0000
+      aware  XGBoost vs random forest (secondary) 0.7856 0.7843      0.0013   -0.0003     0.0029  1.5386       0.1239
+python3 analysis/04_rq3_fairness_audit.py
+             configuration  DI_ratio  DI_ci95_low  DI_ci95_high  male_FDR  female_FDR  FDR_gap  FDR_gap_ci95_low  FDR_gap_ci95_high  FDR_gap_p  TPR_gap  overall_default_rate_retained
+XGBoost, unaware (primary)    0.9460       0.9340        0.9576    0.1755      0.1476   0.0279            0.0182             0.0376        0.0   0.0237                         0.1236
+            XGBoost, aware    0.9310       0.9189        0.9424    0.1828      0.1446   0.0382            0.0283             0.0484        0.0   0.0405                         0.1235
+         Logistic, unaware    0.9489       0.9366        0.9611    0.1786      0.1559   0.0227            0.0136             0.0335        0.0   0.0379                         0.1330
+    Random forest, unaware    0.9494       0.9375        0.9608    0.1743      0.1489   0.0253            0.0160             0.0350        0.0   0.0206                         0.1234
+             configuration    sex     n   TP   FP   FN    TN  retain_rate    FDR    TPR  precision  default_rate_retained
+XGBoost, unaware (primary)   male 11888 1711 1582 1162  7433       0.7230 0.1755 0.5955     0.5196                 0.1352
+XGBoost, unaware (primary) female 18112 2152 2118 1611 12231       0.7642 0.1476 0.5719     0.5040                 0.1164
+            XGBoost, aware   male 11888 1741 1648 1132  7367       0.7149 0.1828 0.6060     0.5137                 0.1332
+            XGBoost, aware female 18112 2128 2075 1635 12274       0.7679 0.1446 0.5655     0.5063                 0.1175
+         Logistic, unaware   male 11888 1639 1610 1234  7405       0.7267 0.1786 0.5705     0.5045                 0.1428
+         Logistic, unaware female 18112 2004 2237 1759 12112       0.7658 0.1559 0.5326     0.4725                 0.1268
+    Random forest, unaware   male 11888 1709 1571 1164  7444       0.7241 0.1743 0.5948     0.5210                 0.1352
+    Random forest, unaware female 18112 2161 2137 1602 12212       0.7627 0.1489 0.5743     0.5028                 0.1160
+python3 analysis/05_rq4_mitigation.py
+[unaware_reweighed] fold 0 done in 0s
+[unaware_reweighed] fold 1 done in 1s
+[unaware_reweighed] fold 2 done in 0s
+[unaware_reweighed] fold 3 done in 0s
+[unaware_reweighed] fold 4 done in 0s
+                                  0
+AUC_new                    0.783944
+AUC_base                   0.784066
+difference                -0.000122
+se_diff                    0.000183
+lower_bound_one_sided_95  -0.000423
+margin                        -0.01
+z_noninferiority          54.064159
+p_noninferiority                0.0
+non_inferior                   True
+paired_auc_correlation     0.998457
+AUC_reweighed_ci95_low     0.777495
+AUC_reweighed_ci95_high    0.790393
+ retention_target                             configuration  overall_retain_rate  default_rate_retained    AUC  DI_ratio  FDR_gap  FDR_gap_ci95_low  FDR_gap_ci95_high  TPR_gap  meets_DI_0.80  meets_FDR_gap_0.05
+             0.65            Unmitigated (single threshold)               0.6469                 0.1102 0.7841    0.9427   0.0262            0.0145             0.0375   0.0160           True                True
+             0.65             Reweighing (single threshold)               0.6471                 0.1101 0.7839    0.9485   0.0221            0.0106             0.0333   0.0124           True                True
+             0.65 Threshold adjustment (per-sex thresholds)               0.6492                 0.1110 0.7841    0.9716   0.0061           -0.0047             0.0172  -0.0009           True                True
+             0.70            Unmitigated (single threshold)               0.6981                 0.1161 0.7841    0.9460   0.0273            0.0167             0.0384   0.0135           True                True
+             0.70             Reweighing (single threshold)               0.6983                 0.1163 0.7839    0.9513   0.0236            0.0131             0.0343   0.0090           True                True
+             0.70 Threshold adjustment (per-sex thresholds)               0.6988                 0.1161 0.7841    0.9703   0.0091           -0.0015             0.0202  -0.0020           True                True
+             0.75            Unmitigated (single threshold)               0.7479                 0.1236 0.7841    0.9460   0.0279            0.0182             0.0376   0.0237           True                True
+             0.75             Reweighing (single threshold)               0.7481                 0.1236 0.7839    0.9473   0.0269            0.0177             0.0370   0.0227           True                True
+             0.75 Threshold adjustment (per-sex thresholds)               0.7475                 0.1239 0.7841    0.9781   0.0043           -0.0051             0.0135  -0.0048           True                True
+             0.80            Unmitigated (single threshold)               0.7965                 0.1346 0.7841    0.9489   0.0282            0.0198             0.0370   0.0272           True                True
+             0.80             Reweighing (single threshold)               0.7971                 0.1345 0.7839    0.9514   0.0257            0.0176             0.0342   0.0266           True                True
+             0.80 Threshold adjustment (per-sex thresholds)               0.7962                 0.1355 0.7841    0.9777   0.0074           -0.0007             0.0157  -0.0053           True                True
+             0.85            Unmitigated (single threshold)               0.8468                 0.1473 0.7841    0.9614   0.0197            0.0127             0.0267   0.0252           True                True
+             0.85             Reweighing (single threshold)               0.8466                 0.1472 0.7839    0.9617   0.0191            0.0124             0.0259   0.0256           True                True
+             0.85 Threshold adjustment (per-sex thresholds)               0.8474                 0.1477 0.7841    0.9850   0.0033           -0.0030             0.0097  -0.0090           True                True
+python3 analysis/06_sensitivity_shap.py
+[sensA] fold 0 done in 0s
+[sensA] fold 1 done in 1s
+[sensA] fold 2 done in 0s
+[sensA] fold 3 done in 0s
+[sensA] fold 4 done in 1s
+[sensB] fold 0 done in 0s
+[sensB] fold 1 done in 1s
+[sensB] fold 2 done in 0s
+[sensB] fold 3 done in 1s
+[sensB] fold 4 done in 1s
+                                                                                 run    AUC  AUC_ci95_low  AUC_ci95_high  DI_ratio  FDR_gap  FDR_gap_ci95_low  FDR_gap_ci95_high  TPR_gap  default_rate_retained
+                                                            Primary: unaware XGBoost 0.7841        0.7776         0.7905    0.9460   0.0279            0.0182             0.0376   0.0237                 0.1236
+                       Sensitivity A: PAY codes -2 and 0 collapsed (unaware XGBoost) 0.7841        0.7777         0.7905    0.9451   0.0272            0.0177             0.0371   0.0293                 0.1242
+                                                              Primary: aware XGBoost 0.7856        0.7791         0.7920    0.9310   0.0382            0.0283             0.0484   0.0405                 0.1235
+Sensitivity B: undocumented EDUCATION and MARRIAGE merged into other (aware XGBoost) 0.7860        0.7796         0.7924    0.9293   0.0391            0.0297             0.0491   0.0426                 0.1230
+    feature  mean_abs_shap_all  mean_abs_shap_male  mean_abs_shap_female  mean_shap_male  mean_shap_female  mean_shap_difference_male_minus_female
+  MAX_DELAY             0.4421              0.4488                0.4377         -0.0375           -0.0666                                  0.0291
+      PAY_0             0.3182              0.3216                0.3160         -0.0960           -0.1130                                  0.0170
+  LIMIT_BAL             0.1361              0.1467                0.1292          0.0039           -0.0179                                  0.0219
+UTILISATION             0.1361              0.1355                0.1365         -0.0150           -0.0319                                  0.0169
+  BILL_AMT1             0.1306              0.1271                0.1328         -0.0300           -0.0135                                 -0.0165
+   PAY_AMT1             0.0933              0.0905                0.0951         -0.0123           -0.0089                                 -0.0034
+   PAY_AMT2             0.0741              0.0748                0.0736         -0.0181           -0.0158                                 -0.0023
+   PAY_AMT3             0.0713              0.0701                0.0720         -0.0091           -0.0086                                 -0.0005
+        AGE             0.0623              0.0623                0.0624          0.0025           -0.0081                                  0.0105
+      PAY_2             0.0571              0.0578                0.0566         -0.0146           -0.0208                                  0.0062
+   PAY_AMT4             0.0452              0.0439                0.0461         -0.0054           -0.0046                                 -0.0008
+   PAY_AMT6             0.0387              0.0390                0.0385         -0.0045           -0.0075                                  0.0030
+python3 src/sample_size.py
+RQ1 precision n = 14,587; paired-contrast power n = 4,470
+RQ2 n_male = 2,508, n_female = 3,821, N = 6,329, Cohen h = 0.072, chi-square N = 1,091
+RQ3 male non-defaulters = 695, female = 1,107, N = 2,314
+RQ4 r = 0.50: n = 23,475
+RQ4 r = 0.70: n = 14,086
+RQ4 r = 0.85: n = 7,044
+Final N_min = 14,587
+
+real	6m11.651s
+user	11m28.873s
+sys	0m8.049s

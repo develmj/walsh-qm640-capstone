@@ -1,0 +1,2 @@
+AUC_new,AUC_base,difference,se_diff,lower_bound_one_sided_95,margin,z_noninferiority,p_noninferiority,non_inferior,paired_auc_correlation
+0.785168,0.785555,-0.000387369,0.000274338,-0.000838614,-0.01,35.0394,2.82981e-269,True,0.996495

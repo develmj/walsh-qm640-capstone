@@ -1,0 +1,13 @@
+pandas==3.0.5
+numpy==2.5.3
+scipy==1.18.1
+scikit-learn==1.9.1
+xgboost==3.4.1
+fairlearn==0.14.0
+shap==0.53.0
+statsmodels==0.15.0
+matplotlib==3.11.2
+xlrd==2.0.2
+pyarrow==26.0.0
+openpyxl==3.1.5
+nbformat>=5.10

@@ -1,0 +1,23 @@
+quantity,"cloud_container (py3.13, xgboost 3.4.1, 2 cores)","mac_studio_vm (py3.10, xgboost 3.2.0, 4 cores)",difference
+"RQ1 AUC, Logistic regression, unaware",0.7547,0.7547,0.0
+"RQ1 AUC, Random forest, unaware",0.7837,0.7838,0.0001
+"RQ1 AUC, XGBoost, unaware",0.7841,0.7836,-0.0005
+"RQ1 AUC, Logistic regression, aware",0.7565,0.7565,0.0
+"RQ1 AUC, Random forest, aware",0.7843,0.7844,0.0001
+"RQ1 AUC, XGBoost, aware",0.7856,0.7858,0.0002
+"RQ1 DeLong difference XGB vs LR, unaware",0.0294,0.0289,-0.0005
+"RQ1 DeLong z, unaware",15.6593,15.5698,-0.0895
+RQ2 sex difference in default rate,0.0339,0.0339,0.0
+RQ2 z,6.921,6.921,0.0
+"RQ3 DI ratio, unaware XGBoost",0.946,0.947,0.001
+"RQ3 false-decline gap, unaware XGBoost",0.0279,0.0268,-0.0011
+"RQ3 gap CI low, unaware XGBoost",0.0182,0.0174,-0.0008
+"RQ3 gap CI high, unaware XGBoost",0.0376,0.0373,-0.0003
+"RQ3 TPR gap, unaware XGBoost",0.0237,0.0235,-0.0002
+"RQ3 false-decline gap, aware XGBoost",0.0382,0.0367,-0.0015
+RQ4 false-decline gap after reweighing,0.0269,0.0245,-0.0024
+RQ4 default rate among retained after reweighing,0.1236,0.1237,0.0001
+RQ4 false-decline gap after threshold adjustment,0.0043,0.0069,0.0026
+RQ4 default rate among retained after threshold adjustment,0.1239,0.1241,0.0002
+RQ4 reweighing AUC difference,-0.0001,-0.0004,-0.0003
+RQ4 non-inferiority lower bound,-0.0004,-0.0007,-0.0002

@@ -1,0 +1,14 @@
+# Compatible pins for Python 3.10 (requirements.txt targets 3.11+).
+pandas>=2.2,<3
+numpy>=1.26,<2.3
+scipy>=1.13,<1.16
+scikit-learn>=1.5,<1.7
+xgboost>=2.1,<3.5
+fairlearn>=0.12
+shap>=0.46
+statsmodels>=0.14
+matplotlib>=3.9
+xlrd>=2.0
+pyarrow>=16
+openpyxl>=3.1
+nbformat>=5.10

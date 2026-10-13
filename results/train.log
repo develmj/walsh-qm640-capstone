@@ -1,0 +1,24 @@
+[unaware] fold 0 done in 30s
+[unaware] fold 1 done in 36s
+[unaware] fold 2 done in 31s
+[unaware] fold 3 done in 32s
+[unaware] fold 4 done in 40s
+[aware] fold 0 done in 32s
+[aware] fold 1 done in 41s
+[aware] fold 2 done in 33s
+[aware] fold 3 done in 33s
+[aware] fold 4 done in 41s
+feature_set  model  partition
+aware        lr     cal          24000
+                    test         30000
+             rf     cal          24000
+                    test         30000
+             xgb    cal          24000
+                    test         30000
+unaware      lr     cal          24000
+                    test         30000
+             rf     cal          24000
+                    test         30000
+             xgb    cal          24000
+                    test         30000
+dtype: int64

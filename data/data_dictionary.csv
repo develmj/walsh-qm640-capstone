@@ -1,0 +1,17 @@
+variable,type,meaning,units_or_coding,role
+ID,integer,Row identifier assigned by the data owner,1 to 30000,Excluded from modelling; keys the out-of-fold predictions
+LIMIT_BAL,numeric continuous,Credit limit granted including supplementary cards,NT$ 10000 to 1000000,Independent; candidate proxy for sex
+SEX,categorical nominal,Sex as recorded by the issuer in 2005 (two administrative categories),1 = male; 2 = female,Primary protected attribute (RQ2-RQ4); excluded from the unaware model
+EDUCATION,categorical ordinal,Highest education attained,1 = graduate school; 2 = university; 3 = high school; 4 = other; 0 = undocumented (source values 0/5/6 kept as one distinct level),Independent; excluded from the unaware model
+MARRIAGE,categorical nominal,Marital status,1 = married; 2 = single; 3 = other; 0 = undocumented (kept as distinct level),Independent; excluded from the unaware model
+AGE,numeric discrete,Age at observation,years 21 to 79,Independent; source of AGE_BAND
+PAY_0 PAY_2 PAY_3 PAY_4 PAY_5 PAY_6,categorical ordinal,Repayment status September to April 2005,1 to 9 = months of delay (documented); -1 = paid in full; -2 and 0 undocumented and interpreted as no consumption and revolving use (assumption tested by sensitivity A),Independent; behavioural signal
+BILL_AMT1 to BILL_AMT6,numeric continuous,Statement balance September to April 2005,NT$; negative values are credit balances,Independent
+PAY_AMT1 to PAY_AMT6,numeric continuous,Amount paid September to April 2005,NT$ non-negative,Independent
+DEFAULT,binary,Observed missed payment in October 2005 (source column: default payment next month),1 = default; 0 = no default,Dependent variable RQ1-RQ4
+AGE_BAND,categorical ordinal (derived),Age grouped into four bands,<30; 30-39; 40-49; >=50,Secondary protected attribute (RQ2)
+UTILISATION,numeric continuous (derived),Latest statement balance divided by credit limit,BILL_AMT1 / LIMIT_BAL; negative and >1 retained,Independent engineered
+PAY_RATIO,numeric continuous (derived),Latest payment divided by prior statement balance,PAY_AMT1 / BILL_AMT2 capped at 1; set to 1 where BILL_AMT2 <= 0,Independent engineered
+MAX_DELAY,numeric discrete (derived),Worst repayment-status code over six months,code -2 to 9 (max of PAY_0..PAY_6); not a duration,Independent engineered
+FLAG,binary (derived decision),Simulated referral or decline: score above the cut-off,1 = flagged; 0 = not flagged,Numerator of the false-decline rate within non-defaulters (RQ3 RQ4)
+RETAIN,binary (derived decision),Simulated favourable decision: 1 - FLAG,1 = retained; 0 = flagged,Favourable-selection rate by group; basis of the DI ratio (RQ3 RQ4)

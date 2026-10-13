@@ -1,0 +1,4 @@
+comparison,change_in_FDR_gap,gap_ci95_low,gap_ci95_high,gap_p_bootstrap,change_in_default_rate_retained,bad_ci95_low,bad_ci95_high,bad_p_bootstrap,change_in_DI,DI_ci95_low,DI_ci95_high,decisions_changed
+Reweighing (unaware) vs unmitigated,-0.00103,-0.00339,0.00140,0.43000,0.00001,-0.00069,0.00071,0.95800,0.00131,-0.00140,0.00398,263
+Threshold adjustment vs unmitigated,-0.02358,-0.02650,-0.02066,0.00000,0.00033,-0.00037,0.00109,0.35800,0.03204,0.02877,0.03545,357
+Reweighing (aware) vs aware unmitigated,-0.01842,-0.02110,-0.01562,0.00000,0.00005,-0.00069,0.00078,0.96400,0.02457,0.02134,0.02769,360

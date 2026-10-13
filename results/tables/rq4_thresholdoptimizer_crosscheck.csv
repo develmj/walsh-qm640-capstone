@@ -1,0 +1,3 @@
+configuration,overall_retain_rate,default_rate_retained,DI_ratio,male_FDR,female_FDR,FDR_gap,FDR_gap_ci95_low,FDR_gap_ci95_high,FDR_gap_p,TPR_gap,note
+"Fairlearn ThresholdOptimizer, FPR parity, balanced-accuracy objective (cross-check)",0.7021,0.1178,0.9702,0.2106,0.2010,0.0097,-0.0009,0.0209,0.0749,-0.0024,"retention chosen by the optimizer, not pinned to 75%; decisions may be randomised"
+Direct-search per-sex thresholds at the optimizer's retention (0.702),0.7011,0.1162,0.9712,0.2094,0.2012,0.0082,-0.0021,0.0186,0.129,-0.0018,deterministic

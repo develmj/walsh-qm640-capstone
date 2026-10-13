@@ -1,0 +1,11 @@
+data/raw/
+data/processed/
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+report-build/**/build_full.js
+report-build/**/out.txt
+report-build/**/*.jpg
+report-build/**/toc_pages*.js
+_to_delete/

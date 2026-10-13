@@ -1,0 +1,2 @@
+AUC_new,AUC_base,difference,se_diff,lower_bound_one_sided_95,margin,z_noninferiority,p_noninferiority,non_inferior,paired_auc_correlation,AUC_reweighed_ci95_low,AUC_reweighed_ci95_high
+0.783944,0.784066,-0.000122301,0.000182703,-0.000422821,-0.01,54.0642,0,True,0.998457,0.777495,0.790393
