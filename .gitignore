@@ -9,3 +9,4 @@ report-build/**/out.txt
 report-build/**/*.jpg
 report-build/**/toc_pages*.js
 _to_delete/
+report-build/

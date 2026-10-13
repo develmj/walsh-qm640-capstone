@@ -121,8 +121,8 @@ EDUCATION and MARRIAGE levels into other) change AUC and the gap by less than
 
 The pipeline was run end to end on three environments: a cloud container
 (Python 3.13, xgboost 3.4.1, scikit-learn 1.9.1, 2 cores), which is the
-primary run behind the report, and a Linux workspace on a Mac Studio (Apple
-silicon, 4 cores) twice, once with the workspace's own Python 3.10 and older
+primary run behind the report, and an Ubuntu 22.04 Docker container on a Mac
+Studio (Apple silicon, 4 cores) twice, once with the container's Python 3.10 and older
 libraries (xgboost 3.2.0, scikit-learn 1.6.1, `requirements-py310.txt`) and
 once in a Python 3.12 environment with the exact versions in
 `requirements.txt` (created with `uv`). The comparison is in
